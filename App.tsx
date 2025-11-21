@@ -3,12 +3,14 @@ import { HEXAGRAMS, TRIGRAMS } from './constants';
 import { HexagramData } from './types';
 import HexagramSymbol from './components/HexagramSymbol';
 import HexagramModal from './components/HexagramModal';
+import DivinationModal from './components/DivinationModal';
 import { Search, Info, Command } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedHexagram, setSelectedHexagram] = useState<HexagramData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isDivinationOpen, setIsDivinationOpen] = useState(false);
 
   const filteredHexagrams = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -23,9 +25,9 @@ const App: React.FC = () => {
     return results.sort((a, b) => a.id - b.id);
   }, [searchQuery]);
 
-  const handleRandomPick = () => {
-    const randomIndex = Math.floor(Math.random() * HEXAGRAMS.length);
-    setSelectedHexagram(HEXAGRAMS[randomIndex]);
+  const handleDivinationComplete = (hexagram: HexagramData) => {
+    setIsDivinationOpen(false);
+    setSelectedHexagram(hexagram);
   };
 
   const getTrigramInfo = (symbol: number[]) => {
@@ -35,6 +37,54 @@ const App: React.FC = () => {
       lower: TRIGRAMS[lowerKey],
       upper: TRIGRAMS[upperKey]
     };
+  };
+
+  const getLuckStyles = (luck: string) => {
+    switch (luck) {
+      case '上上':
+        return {
+          border: 'border-red-300',
+          badge: 'bg-red-500 text-white border-red-600',
+          bg: 'bg-red-100 hover:bg-red-200',
+          text: 'text-red-900'
+        };
+      case '中上':
+        return {
+          border: 'border-amber-300',
+          badge: 'bg-amber-500 text-white border-amber-600',
+          bg: 'bg-amber-100 hover:bg-amber-200',
+          text: 'text-amber-900'
+        };
+      case '中平':
+      case '中中':
+        return {
+          border: 'border-blue-300',
+          badge: 'bg-blue-500 text-white border-blue-600',
+          bg: 'bg-blue-100 hover:bg-blue-200',
+          text: 'text-blue-900'
+        };
+      case '中下':
+        return {
+          border: 'border-slate-400',
+          badge: 'bg-slate-600 text-white border-slate-700',
+          bg: 'bg-slate-200 hover:bg-slate-300',
+          text: 'text-slate-800'
+        };
+      case '下下':
+        return {
+          border: 'border-stone-500',
+          badge: 'bg-stone-700 text-white border-stone-800',
+          bg: 'bg-stone-300 hover:bg-stone-400',
+          text: 'text-stone-900'
+        };
+      default:
+        return {
+          border: 'border-ink-200',
+          badge: 'bg-ink-600 text-white',
+          bg: 'bg-white hover:bg-paper-50',
+          text: 'text-ink-900'
+        };
+    }
   };
 
   return (
@@ -70,7 +120,7 @@ const App: React.FC = () => {
             </div>
 
             <button 
-                onClick={handleRandomPick}
+                onClick={() => setIsDivinationOpen(true)}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-ink-900 text-paper-50 rounded-full text-sm font-sans font-medium hover:bg-ink-800 transition-all active:scale-95 shadow-md hover:shadow-lg"
             >
                 <Command size={16} />
@@ -102,11 +152,11 @@ const App: React.FC = () => {
                 />
             </div>
              <button 
-                onClick={handleRandomPick}
+                onClick={() => setIsDivinationOpen(true)}
                 className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-ink-900 text-paper-50 rounded-lg text-sm font-sans font-medium active:scale-95 shadow-md"
             >
                 <Command size={16} />
-                <span>Ask the Oracle (Random)</span>
+                <span>Ask the Oracle</span>
             </button>
         </div>
       </header>
@@ -139,42 +189,47 @@ const App: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 lg:gap-8">
             {filteredHexagrams.map((hex) => {
                 const { lower, upper } = getTrigramInfo(hex.symbol);
+                const style = getLuckStyles(hex.luck);
+                
                 return (
                     <div
                     key={hex.id}
                     onClick={() => setSelectedHexagram(hex)}
-                    className="group relative bg-white rounded-xl p-4 pt-8 shadow-sm border border-ink-100 hover:shadow-xl hover:border-amber-300 transition-all duration-300 cursor-pointer flex flex-col items-center text-center hover:-translate-y-1"
+                    className={`group relative rounded-xl p-4 pt-8 shadow-sm border-2 ${style.border} hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center hover:-translate-y-1 ${style.bg}`}
                     >
-                    {/* Hover Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none" />
                     
                     {/* Hexagram ID - Permanently Visible */}
-                    <div className="absolute top-3 left-3 text-[10px] font-serif font-bold text-ink-400 bg-ink-50/80 backdrop-blur-sm px-2 py-1 rounded-md border border-ink-100 group-hover:border-amber-200 group-hover:text-amber-700 transition-colors z-20">
+                    <div className="absolute top-3 left-3 text-[10px] font-serif font-bold text-ink-600 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-ink-100/50 z-20">
                         {hex.id}
                     </div>
+
+                    {/* Luck Badge - Top Right */}
+                    <div className={`absolute top-3 right-3 text-[10px] font-sans font-bold px-2 py-0.5 rounded-md border ${style.badge} z-20 shadow-sm`}>
+                        {hex.luck}
+                    </div>
                     
-                    <div className="relative z-10 mb-3 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="relative z-10 mb-3 transition-opacity">
                         <HexagramSymbol lines={hex.symbol} size="sm" className="group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     
                     <div className="relative z-10 w-full">
-                        <h3 className="text-2xl font-serif font-bold text-ink-900 mb-1">{hex.name}</h3>
-                        <p className="text-xs text-ink-500 uppercase tracking-wide font-sans mb-1 truncate w-full px-2">{hex.pinyin}</p>
-                        <p className="text-[10px] text-ink-400 font-sans truncate w-full px-2 pb-3">{hex.english}</p>
+                        <h3 className={`text-2xl font-serif font-bold mb-1 ${style.text}`}>{hex.name}</h3>
+                        <p className={`text-xs uppercase tracking-wide font-sans mb-1 truncate w-full px-2 ${style.text} opacity-80`}>{hex.pinyin}</p>
+                        <p className={`text-[10px] font-sans truncate w-full px-2 pb-3 ${style.text} opacity-70`}>{hex.english}</p>
                         
                         {/* Composition Footer */}
-                        <div className="w-full flex justify-center items-center gap-2 text-[10px] text-ink-400 font-sans border-t border-ink-100/50 pt-2 mt-1 bg-ink-50/30 rounded-b-lg group-hover:bg-amber-50/30 transition-colors">
+                        <div className="w-full flex justify-center items-center gap-2 text-[10px] font-sans border-t border-black/10 pt-2 mt-1 bg-white/40 rounded-b-lg shadow-sm backdrop-blur-[2px]">
                             <div className="flex flex-col items-center leading-none gap-0.5">
                                 <span className="text-[8px] uppercase tracking-wider opacity-60">Upper 上卦</span>
-                                <span className="font-medium text-ink-600 flex items-center gap-1">
-                                    {upper?.nature} <span className="font-serif text-ink-400">{upper?.name}</span>
+                                <span className={`font-medium flex items-center gap-1 ${style.text}`}>
+                                    {upper?.nature} <span className="font-serif">{upper?.name}</span>
                                 </span>
                             </div>
-                            <div className="h-5 w-px bg-ink-200/50 mx-1"></div>
+                            <div className="h-5 w-px bg-black/10 mx-1"></div>
                             <div className="flex flex-col items-center leading-none gap-0.5">
                                 <span className="text-[8px] uppercase tracking-wider opacity-60">Lower 下卦</span>
-                                <span className="font-medium text-ink-600 flex items-center gap-1">
-                                    {lower?.nature} <span className="font-serif text-ink-400">{lower?.name}</span>
+                                <span className={`font-medium flex items-center gap-1 ${style.text}`}>
+                                    {lower?.nature} <span className="font-serif">{lower?.name}</span>
                                 </span>
                             </div>
                         </div>
@@ -203,6 +258,13 @@ const App: React.FC = () => {
         hexagram={selectedHexagram} 
         isOpen={!!selectedHexagram} 
         onClose={() => setSelectedHexagram(null)} 
+      />
+
+      {/* Divination Modal */}
+      <DivinationModal 
+        isOpen={isDivinationOpen}
+        onClose={() => setIsDivinationOpen(false)}
+        onComplete={handleDivinationComplete}
       />
     </div>
   );

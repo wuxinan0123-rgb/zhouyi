@@ -2,18 +2,18 @@ import { GoogleGenAI } from "@google/genai";
 import { HexagramData } from "../types";
 import { TRIGRAMS } from "../constants";
 
-const API_KEY = process.env.API_KEY;
-
 export const streamHexagramInterpretation = async (
   hexagram: HexagramData,
   onChunk: (text: string) => void
 ) => {
-  if (!API_KEY) {
+  // Fix: Use process.env.API_KEY directly as per guidelines
+  if (!process.env.API_KEY) {
     onChunk("API Key is missing. Please configure the environment variable.");
     return;
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  // Fix: Initialize with process.env.API_KEY directly
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // Derive structure
   const lowerKey = hexagram.symbol.slice(0, 3).join(',');
